@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SNS Subscribe / Unsubscribe using existing HTTP API
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+
+  # Reference EXISTING HTTP API Gateway
+  ExistingHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      ApiId: 9swlhzogxj
+
+  SnsSubscriptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: subscriberLambda.handler
+      Policies:
+        - SNSCrudPolicy:
+            TopicName: "*"
+      Events:
+        SubscribeRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ExistingHttpApi
+            Path: /subscribe
+            Method: POST
+
+        UnsubscribeRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ExistingHttpApi
+            Path: /unsubscribe
+            Method: POST
