@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: SNS Subscribe / Unsubscribe using existing HTTP API
+Description: LOCAL - SNS Subscribe / Unsubscribe
 
 Globals:
   Function:
@@ -10,17 +10,14 @@ Globals:
 
 Resources:
 
-  # Reference EXISTING HTTP API Gateway
-  ExistingHttpApi:
+  LocalHttpApi:
     Type: AWS::Serverless::HttpApi
-    Properties:
-      ApiId: 9swlhzogxj
 
   SnsSubscriptionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/
-      Handler: subscriberLambda.handler
+      CodeUri: lambdas/subscriberlambda/
+      Handler: index.handler
       Policies:
         - SNSCrudPolicy:
             TopicName: "*"
@@ -28,13 +25,13 @@ Resources:
         SubscribeRoute:
           Type: HttpApi
           Properties:
-            ApiId: !Ref ExistingHttpApi
+            ApiId: !Ref LocalHttpApi
             Path: /subscribe
             Method: POST
 
         UnsubscribeRoute:
           Type: HttpApi
           Properties:
-            ApiId: !Ref ExistingHttpApi
+            ApiId: !Ref LocalHttpApi
             Path: /unsubscribe
             Method: POST
