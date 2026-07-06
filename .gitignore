@@ -1,2 +1,19 @@
+# Node.js
 node_modules/
+npm-debug.log
+yarn-error.log
+
+# AWS SAM
 .aws-sam/
+*.zip
+
+# Environment Variables
+.env
+local_env.json
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
