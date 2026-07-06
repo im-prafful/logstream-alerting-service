@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Log Stream Alerting Service - Publisher and Subscriber Lambdas
+
+Parameters:
+  ExistingApiId:
+    Type: String
+    Default: '9swlhzogxj'
+    Description: 'ID of the existing HTTP API Gateway'
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        SNS_TOPIC_ARN: 'arn:aws:sns:ap-south-1:031415497613:LogIncidentTopic'
+
+Resources:
+  PublisherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/publisherLambda/
+      Handler: index.handler
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !Select [5, !Split [":", 'arn:aws:sns:ap-south-1:031415497613:LogIncidentTopic']]
+      Events:
+        AnomalyEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: Logstream-alert-bus
+            Pattern:
+              source:
+                - "com.logstream.processing"
+              detail-type:
+                - "VolumeAnomalyDetected"
+
+  SubscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/subscriberLambda/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Subscribe
+                - sns:Unsubscribe
+              Resource: 'arn:aws:sns:ap-south-1:031415497613:LogIncidentTopic'
+  SubscriberIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ExistingApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SubscriberFunction.Arn}/invocations"
+      PayloadFormatVersion: "2.0"
+
+  SubscribeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: "POST /subscribe"
+      Target: !Join ["/", ["integrations", !Ref SubscriberIntegration]]
+
+  UnsubscribeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: "POST /unsubscribe"
+      Target: !Join ["/", ["integrations", !Ref SubscriberIntegration]]
+
+  SubscriberApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SubscriberFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingApiId}/*/*"
+

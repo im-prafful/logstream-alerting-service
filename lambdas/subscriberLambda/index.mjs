@@ -13,7 +13,8 @@ export const handler = async (event) => {
 
     // ===================== SUBSCRIBE =====================
     if (path === "/subscribe") {
-      const { topicArn, emailAddress } = body;
+      const { emailAddress } = body;
+      const topicArn = process.env.SNS_TOPIC_ARN;
 
       if (!topicArn || !emailAddress) {
         return response(400, {

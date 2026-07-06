@@ -2,6 +2,3 @@ SUBSCRIBER LAMBDA
 make table in alert db for subscriber user emails
 fetecvh inc from log db and store it in a sqs
 handle unsubscrible logic 
-
-PUYBLISHER
-fetch inc from sqs and publish to subscribers
