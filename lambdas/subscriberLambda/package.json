@@ -1,0 +1,10 @@
+{
+  "name": "subscriberlambda",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-sns": "^3.962.0",
+    "pg": "^8.16.3"
+  }
+}
